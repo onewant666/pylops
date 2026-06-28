@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lhm"
+version = "0.1.0"
+description = "Linux 主机状态采集与定时自检工具 — 轻量级运维监控"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [
+    {name = "onewant666", email = "onewantgogogo@gmail.com"},
+]
+keywords = ["linux", "monitoring", "health-check", "devops", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+    "psutil>=5.9.0",
+    "apscheduler>=3.10.0",
+    "rich>=13.0.0",
+    "colorama>=0.4.6",
+    "requests>=2.31.0",
+    "jinja2>=3.1.0",
+    "flask>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+lhm = "lhm.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/onewant666/lhm"
+Repository = "https://github.com/onewant666/lhm"
+Issues = "https://github.com/onewant666/lhm/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lhm*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"

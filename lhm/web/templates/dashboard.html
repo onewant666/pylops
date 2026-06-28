@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐧 LHM 主机状态仪表盘</title>
+    <meta http-equiv="refresh" content="{{ refresh_interval }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --accent: #6366f1;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Microsoft YaHei', sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; padding: 16px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* 头部 */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
+        .header .status-dot {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.ok { background: var(--green); }
+        .status-dot.warn { background: var(--yellow); }
+        .status-dot.bad { background: var(--red); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .header-right { color: var(--text-dim); font-size: 0.85rem; }
+        .badge {
+            display: inline-block; padding: 2px 10px; border-radius: 12px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .badge-ok { background: #166534; color: #86efac; }
+        .badge-warn { background: #713f12; color: #fde047; }
+        .badge-bad { background: #7f1d1d; color: #fca5a5; }
+
+        /* 指标卡片 */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .card {
+            background: var(--card-bg); border-radius: 10px;
+            padding: 16px; border: 1px solid var(--border);
+        }
+        .card .label { font-size: 0.8rem; color: var(--text-dim);
+                        text-transform: uppercase; letter-spacing: 0.5px; }
+        .card .value {
+            font-size: 2rem; font-weight: 700; margin: 4px 0;
+            font-variant-numeric: tabular-nums;
+        }
+        .card .sub {
+            font-size: 0.8rem; color: var(--text-dim);
+            display: flex; justify-content: space-between;
+        }
+        .card.warn { border-color: var(--yellow); }
+        .card.bad  { border-color: var(--red); }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 4px; background: #334155; border-radius: 2px;
+            margin-top: 8px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 2px; transition: width 0.5s;
+        }
+        .progress-fill.low  { background: var(--green); }
+        .progress-fill.mid  { background: var(--yellow); }
+        .progress-fill.high { background: var(--red); }
+
+        /* 图表区域 */
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px; margin-bottom: 20px;
+        }
+        .chart-box {
+            background: var(--card-bg); border-radius: 10px;
+            padding: 16px; border: 1px solid var(--border);
+        }
+        .chart-box h3 { font-size: 0.9rem; color: var(--text-dim);
+                        margin-bottom: 8px; }
+        .chart-box canvas { max-height: 200px; }
+
+        /* 表格 */
+        .section-title {
+            font-size: 1rem; margin: 20px 0 10px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border);
+        }
+        table {
+            width: 100%; border-collapse: collapse;
+            background: var(--card-bg); border-radius: 10px;
+            overflow: hidden; border: 1px solid var(--border);
+        }
+        th, td { padding: 10px 14px; text-align: left; font-size: 0.9rem; }
+        th { background: #1a2332; color: var(--text-dim);
+             font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr { border-bottom: 1px solid var(--border); }
+        tr:last-child { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        .tag {
+            display: inline-block; padding: 1px 8px; border-radius: 10px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .tag-info  { background: #1e3a5f; color: #93c5fd; }
+        .tag-warn  { background: #713f12; color: #fde047; }
+        .tag-crit  { background: #7f1d1d; color: #fca5a5; }
+        .tag-pass  { background: #166534; color: #86efac; }
+        .tag-fail  { background: #7f1d1d; color: #fca5a5; }
+
+        .footer {
+            text-align: center; color: var(--text-dim);
+            font-size: 0.8rem; margin-top: 30px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .charts { grid-template-columns: 1fr; }
+            .cards { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 头部 -->
+    <div class="header">
+        <h1>
+            🐧 LHM 主机状态
+            <span id="statusDot" class="status-dot ok"></span>
+        </h1>
+        <div class="header-right">
+            页面每 {{ refresh_interval }}s 自动刷新 ·
+            <span id="lastUpdate">加载中...</span>
+        </div>
+    </div>
+
+    <!-- 指标卡片 -->
+    <div class="cards" id="cards">
+        <div class="card"><div class="label">CPU</div><div class="value">---</div></div>
+        <div class="card"><div class="label">内存</div><div class="value">---</div></div>
+        <div class="card"><div class="label">磁盘</div><div class="value">---</div></div>
+        <div class="card"><div class="label">负载比</div><div class="value">---</div></div>
+        <div class="card"><div class="label">运行时长</div><div class="value">---</div></div>
+        <div class="card"><div class="label">自检通过</div><div class="value">---</div></div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="charts">
+        <div class="chart-box">
+            <h3>📈 CPU 使用率 (最近 24h)</h3>
+            <canvas id="chartCpu"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>📈 内存使用率 (最近 24h)</h3>
+            <canvas id="chartMem"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>📈 系统负载 (最近 24h)</h3>
+            <canvas id="chartLoad"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>📈 磁盘使用率 (最近 24h)</h3>
+            <canvas id="chartDisk"></canvas>
+        </div>
+    </div>
+
+    <!-- 自检结果 -->
+    <div class="section-title">🔍 最近自检结果</div>
+    <table id="checksTable">
+        <thead>
+            <tr><th>时间</th><th>规则</th><th>级别</th><th>结果</th><th>详情</th></tr>
+        </thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-dim)">加载中...</td></tr></tbody>
+    </table>
+
+    <!-- 最近告警 -->
+    <div class="section-title">⚠️ 最近告警</div>
+    <table id="alertsTable">
+        <thead>
+            <tr><th>时间</th><th>规则</th><th>级别</th><th>详情</th></tr>
+        </thead>
+        <tbody><tr><td colspan="4" style="text-align:center;color:var(--text-dim)">无告警</td></tr></tbody>
+    </table>
+
+    <div class="footer">LHM v0.1.0 — Linux 主机状态采集与定时自检工具</div>
+</div>
+
+<script>
+// ========== 工具函数 ==========
+const CHART_COLORS = {
+    cpu:  '#6366f1',  mem: '#22c55e',
+    load: '#eab308',  disk: '#f97316',
+};
+
+let charts = {};
+
+function createChart(canvasId, label, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    return new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label, data: [],
+            borderColor: color, backgroundColor: color + '20',
+            fill: true, tension: 0.3, pointRadius: 0 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { beginAtZero: true, max: 100,
+                     ticks: { color: '#94a3b8', font: { size: 10 } },
+                     grid: { color: '#1e293b' } }
+            }
+        }
+    });
+}
+
+function progressColor(val, thresholds = [50, 80]) {
+    if (val >= thresholds[1]) return 'high';
+    if (val >= thresholds[0]) return 'mid';
+    return 'low';
+}
+
+// ========== 加载数据 ==========
+async function loadOverview() {
+    try {
+        const resp = await fetch('/api/overview');
+        const data = await resp.json();
+        renderCards(data);
+        renderChecks(data);
+        updateStatus(data);
+        document.getElementById('lastUpdate').textContent =
+            new Date().toLocaleTimeString('zh-CN');
+    } catch(e) {
+        console.error('加载失败:', e);
+    }
+}
+
+function renderCards(data) {
+    const host = Object.keys(data.latest)[0];
+    if (!host) return;
+    const metrics = data.latest[host];
+
+    const vals = {
+        cpu:    metrics.cpu?.data?.percent ?? null,
+        mem:    metrics.memory?.data?.percent ?? null,
+        disk:   metrics.disk?.data?.worst_percent ??
+                metrics.disk?.data?.partitions?.[0]?.percent ?? null,
+        load:   metrics.system?.data?.load_ratio ?? null,
+        uptime: metrics.system?.data?.uptime ?? '--',
+    };
+
+    const cardsHtml = [
+        { label: 'CPU',  value: vals.cpu !== null ? vals.cpu + '%' : '--',
+          sub: '使用率',  pct: vals.cpu },
+        { label: '内存', value: vals.mem !== null ? vals.mem + '%' : '--',
+          sub: '使用率',  pct: vals.mem },
+        { label: '磁盘', value: vals.disk !== null ? vals.disk + '%' : '--',
+          sub: '最差分區', pct: vals.disk },
+        { label: '负载比', value: vals.load !== null ? vals.load.toFixed(1) : '--',
+          sub: 'load/cpu', pct: vals.load !== null ? vals.load * 50 : null },
+        { label: '运行时长', value: vals.uptime, sub: '', pct: null },
+        { label: '自检通过率', value: data.check_stats.pass_rate + '%',
+          sub: `${data.check_stats.passed}/${data.check_stats.total} 通过`,
+          pct: 100 - data.check_stats.pass_rate },
+    ].map(c => {
+        let cardClass = '';
+        if (c.pct !== null) {
+            if (c.label === '自检通过率') {
+                cardClass = c.pct > 0 ? 'bad' : 'ok';
+            } else if (c.label === '负载比') {
+                cardClass = c.pct > 100 ? 'bad' : c.pct > 70 ? 'warn' : '';
+            } else {
+                cardClass = c.pct > 80 ? 'bad' : c.pct > 60 ? 'warn' : '';
+            }
+        }
+        let bar = '';
+        if (c.pct !== null && c.label !== '自检通过率' && c.label !== '负载比') {
+            const pc = c.label === '负载比' ? Math.min(c.pct, 100) : c.pct;
+            bar = `<div class="progress-bar"><div class="progress-fill ${progressColor(pc)}" style="width:${pc}%"></div></div>`;
+        } else if (c.label === '负载比' && c.pct !== null) {
+            const pc = Math.min(c.pct, 100);
+            bar = `<div class="progress-bar"><div class="progress-fill ${progressColor(pc,[30,60])}" style="width:${pc}%"></div></div>`;
+        }
+        return `<div class="card ${cardClass}">
+            <div class="label">${c.label}</div>
+            <div class="value">${c.value}</div>
+            <div class="sub">${c.sub}</div>${bar}
+        </div>`;
+    }).join('');
+
+    document.getElementById('cards').innerHTML = cardsHtml;
+}
+
+function renderChecks(data) {
+    // 自检表格
+    const checks = data.check_stats;
+    // 需要再请求详细列表
+    fetch('/api/checks').then(r => r.json()).then(cdata => {
+        const rows = cdata.checks.map(c => `
+            <tr>
+                <td style="color:var(--text-dim)">${c.timestamp || '--'}</td>
+                <td>${c.rule_name}</td>
+                <td><span class="tag tag-${c.severity}">${c.severity}</span></td>
+                <td><span class="tag ${c.passed ? 'tag-pass' : 'tag-fail'}">${c.passed ? '✓ 通过' : '✗ 未通过'}</span></td>
+                <td style="color:var(--text-dim);font-size:0.8rem">${formatDetail(c.detail)}</td>
+            </tr>
+        `).join('');
+        document.querySelector('#checksTable tbody').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:var(--text-dim)">暂无数据</td></tr>';
+    });
+
+    // 告警表格
+    const alerts = data.failed_checks || [];
+    const arows = alerts.map(a => `
+        <tr>
+            <td style="color:var(--text-dim)">${a.timestamp || '--'}</td>
+            <td>${a.rule_name}</td>
+            <td><span class="tag tag-${a.severity}">${a.severity}</span></td>
+            <td style="color:var(--text-dim);font-size:0.8rem">${formatDetail(a.detail)}</td>
+        </tr>
+    `).join('');
+    document.querySelector('#alertsTable tbody').innerHTML = arows || '<tr><td colspan="4" style="text-align:center;color:var(--green)">✓ 所有检查通过</td></tr>';
+}
+
+function formatDetail(d) {
+    if (!d) return '--';
+    if (d.actual !== undefined) {
+        return `${d.metric}.${d.field} = <b>${d.actual}</b> ${d.operator} ${d.threshold}`;
+    }
+    return JSON.stringify(d).substring(0, 80);
+}
+
+function updateStatus(data) {
+    const dot = document.getElementById('statusDot');
+    const failed = data.failed_checks?.length || 0;
+    dot.className = 'status-dot ' + (failed === 0 ? 'ok' : 'bad');
+}
+
+// ========== 加载图表 ==========
+function loadChart(metric, canvasId, label, color, valueKey) {
+    fetch(`/api/history/${metric}`)
+        .then(r => r.json())
+        .then(data => {
+            const history = data.history || [];
+            const labels = history.map(h => {
+                const d = new Date(h.timestamp);
+                return d.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+            });
+            const values = history.map(h => {
+                if (valueKey) {
+                    // 嵌套取值: 'data.percent'
+                    const keys = valueKey.split('.');
+                    let v = h.data;
+                    for (let k of keys) v = v?.[k];
+                    return v;
+                }
+                return h.data?.percent ?? h.data?.worst_percent ??
+                       h.data?.partitions?.[0]?.percent ?? null;
+            });
+            if (!charts[canvasId]) {
+                charts[canvasId] = createChart(canvasId, label, color);
+            }
+            charts[canvasId].data.labels = labels;
+            charts[canvasId].data.datasets[0].data = values;
+            charts[canvasId].update();
+        });
+}
+
+// 初始化图表
+document.addEventListener('DOMContentLoaded', () => {
+    loadOverview();
+    loadChart('cpu',     'chartCpu',  'CPU %',   CHART_COLORS.cpu,  'data.percent');
+    loadChart('memory',  'chartMem',  '内存 %',  CHART_COLORS.mem,  'data.percent');
+    loadChart('system',  'chartLoad', '负载比',  CHART_COLORS.load, 'data.load_ratio');
+    loadChart('disk',    'chartDisk', '磁盘 %',  CHART_COLORS.disk, 'data.worst_percent');
+});
+</script>
+</body>
+</html>

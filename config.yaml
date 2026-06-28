@@ -1,0 +1,96 @@
+# ============================================================
+# Linux 主机状态采集与定时自检工具 — 配置文件
+# ============================================================
+
+# ---------------------- 目标主机列表 ----------------------
+hosts:
+  - name: localhost
+    type: local
+
+# ---------------------- 采集指标 ----------------------
+collect:
+  metrics:
+    cpu: true
+    memory: true
+    disk: true
+    network: true
+    process: true
+    system: true
+
+  process:
+    top_n: 10
+
+# ---------------------- 采集调度 ----------------------
+schedule:
+  interval: 300          # 采集间隔（秒），默认 5 分钟
+
+# ---------------------- 数据存储 ----------------------
+storage:
+  path: ./data/monitor.db
+  retention_days: 30
+
+# ---------------------- 自检规则 ----------------------
+rules:
+  - name: cpu_high
+    description: CPU 使用率过高
+    metric: cpu
+    field: percent
+    operator: ">"
+    threshold: 90
+    severity: warning
+    enabled: true
+
+  - name: mem_high
+    description: 内存使用率过高
+    metric: memory
+    field: percent
+    operator: ">"
+    threshold: 90
+    severity: warning
+    enabled: true
+
+  - name: disk_high
+    description: 磁盘使用率过高
+    metric: disk
+    field: worst_percent
+    operator: ">"
+    threshold: 85
+    severity: critical
+    enabled: true
+
+  - name: load_high
+    description: 系统负载过高（负载/核心数 > 2）
+    metric: system
+    field: load_ratio
+    operator: ">"
+    threshold: 2.0
+    severity: warning
+    enabled: true
+
+  - name: swap_high
+    description: Swap 使用率偏高
+    metric: memory
+    field: swap_percent
+    operator: ">"
+    threshold: 50
+    severity: info
+    enabled: true
+
+# ---------------------- 定时通知 ----------------------
+notify:
+  enabled: false
+  interval: 3600         # 通知间隔（秒），默认每小时发一次摘要
+
+  dingtalk:
+    webhook: ""
+  feishu:
+    webhook: ""
+  wecom:
+    webhook: ""
+
+# ---------------------- Web 面板 ----------------------
+web:
+  host: 0.0.0.0
+  port: 5000
+  debug: false           # 调试模式（开发时用 true）
+  refresh_interval: 30   # 页面自动刷新间隔（秒）
