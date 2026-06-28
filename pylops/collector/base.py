@@ -1,7 +1,7 @@
 """采集器基类 — 定义统一接口"""
 
 from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from ..utils.helpers import now_iso
 
@@ -15,6 +15,7 @@ class CollectorResult:
     success: bool = True
     data: Dict[str, Any] = field(default_factory=dict)
     error: str = ""
+    warnings: List[str] = field(default_factory=list)  # 平台兼容性等非致命警告
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -33,12 +34,14 @@ class BaseCollector:
             host_config: HostConfig 对象
         """
         self.host = host_config
+        self._warnings: List[str] = []  # 子类 _gather() 中追加平台警告
 
     def collect(self) -> CollectorResult:
         """
         执行采集，返回 CollectorResult。
         子类应覆盖 _gather() 方法而非此方法。
         """
+        self._warnings = []
         try:
             data = self._gather()
             return CollectorResult(
@@ -46,6 +49,7 @@ class BaseCollector:
                 metric=self.metric_name,
                 success=True,
                 data=data,
+                warnings=list(self._warnings),
             )
         except Exception as e:
             return CollectorResult(
@@ -53,6 +57,7 @@ class BaseCollector:
                 metric=self.metric_name,
                 success=False,
                 error=str(e),
+                warnings=list(self._warnings),
             )
 
     def _gather(self) -> Dict[str, Any]:

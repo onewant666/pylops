@@ -10,8 +10,8 @@ with open("requirements.txt", encoding="utf-8") as f:
     ]
 
 setup(
-    name="lhm",
-    version="0.1.0",
+    name="pylops",
+    version="0.2.0",
     description="Linux 主机状态采集与定时自检工具",
     author="Your Name",
     packages=find_packages(),
@@ -19,7 +19,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "lhm=lhm.cli:main",
+            "pylops=pylops.cli:main",
         ],
     },
     python_requires=">=3.8",

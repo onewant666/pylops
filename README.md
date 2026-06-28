@@ -1,6 +1,6 @@
-# 🐧 LHM — Linux Host Monitor
+# 🐧 PyLOps — Linux Host Monitor
 
-[![CI](https://github.com/onewant666/lhm/actions/workflows/ci.yml/badge.svg)](https://github.com/onewant666/lhm/actions/workflows/ci.yml)
+[![CI](https://github.com/onewant666/pylops/actions/workflows/ci.yml/badge.svg)](https://github.com/onewant666/pylops/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -29,7 +29,7 @@
 ```
 Web 仪表盘 (暗色主题)
 ┌──────────────────────────────────────────────────────┐
-│  🐧 LHM 主机状态                         ● 正常     │
+│  🐧 PyLOps 主机状态                         ● 正常     │
 ├──────────┬──────────┬──────────┬─────────────────────┤
 │ CPU      │ 内存     │ 磁盘     │ 负载比    运行时长   │
 │  23.5%   │  67.2%   │   45%    │  0.8      3d 5h     │
@@ -58,33 +58,33 @@ Web 仪表盘 (暗色主题)
 
 ```bash
 # 克隆仓库
-git clone https://github.com/onewant666/lhm.git
-cd lhm
+git clone https://github.com/onewant666/pylops.git
+cd pylops
 
 # 安装
 pip install -e .
 
 # 初始化（生成配置 + 建库）
-lhm init
+pylops init
 ```
 
 ### 使用
 
 ```bash
 # 执行一次采集 + 自检
-lhm run
+pylops run
 
 # 启动 Web 仪表盘（后台自动采集）
-lhm web
+pylops web
 
 # 启动守护进程（定时采集 + 定时通知）
-lhm daemon
+pylops daemon
 
 # 导出 HTML 报告
-lhm report -f html -o report.html
+pylops report -f html -o report.html
 
 # 查看更多命令
-lhm --help
+pylops --help
 ```
 
 ---
@@ -182,7 +182,7 @@ pip install -e ".[dev]"
 pytest -v
 
 # 覆盖率
-pytest --cov=lhm --cov-report=html
+pytest --cov=pylops --cov-report=html
 ```
 
 ---
@@ -190,7 +190,7 @@ pytest --cov=lhm --cov-report=html
 ## 📁 项目结构
 
 ```
-lhm/
+pylops/
 ├── cli.py              # Click CLI 入口（7 个子命令）
 ├── config.py           # YAML 配置加载
 ├── engine.py           # 核心编排（采集→检查→存储）

@@ -20,7 +20,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-logger = logging.getLogger("lhm")
+logger = logging.getLogger("pylops")
 
 
 @click.group()
@@ -30,17 +30,17 @@ logger = logging.getLogger("lhm")
     help="配置文件路径（默认: config.yaml）",
     type=click.Path(exists=True),
 )
-@click.version_option(version="0.1.0", prog_name="lhm")
+@click.version_option(version="0.2.0", prog_name="pylops")
 @click.pass_context
 def cli(ctx, config):
-    """🐧 LHM — Linux 主机状态采集与定时自检工具"""
+    """🐧 PyLOps — Linux 主机状态采集与定时自检工具"""
     ctx.ensure_object(dict)
     config_path = Path(config) if config else None
     try:
         cfg = load_config(config_path)
     except FileNotFoundError as e:
         click.echo(f"❌ {e}", err=True)
-        click.echo("提示: 运行 'lhm init' 生成默认配置文件", err=True)
+        click.echo("提示: 运行 'pylops init' 生成默认配置文件", err=True)
         sys.exit(1)
     ctx.obj["config"] = cfg
 
@@ -73,9 +73,9 @@ def init(output):
     click.echo()
     click.echo("下一步:")
     click.echo("  1. 编辑 config.yaml 调整阈值和通知配置")
-    click.echo("  2. lhm run       — 执行首次采集和自检")
-    click.echo("  3. lhm daemon    — 启动定时采集守护进程")
-    click.echo("  4. lhm web       — 启动 Web 仪表盘")
+    click.echo("  2. pylops run       — 执行首次采集和自检")
+    click.echo("  3. pylops daemon    — 启动定时采集守护进程")
+    click.echo("  4. pylops web       — 启动 Web 仪表盘")
 
 
 # ===================== run =====================
@@ -87,7 +87,7 @@ def run(ctx, no_check):
     """执行一次完整的采集 + 自检"""
     cfg = ctx.obj["config"]
 
-    click.echo("🐧 LHM — Linux 主机状态采集与定时自检")
+    click.echo("🐧 PyLOps — Linux 主机状态采集与定时自检")
     click.echo(f"主机: {len(cfg.hosts)} 台 | "
                f"指标: {len(cfg.enabled_metrics)} 项 | "
                f"规则: {len(cfg.enabled_rules)} 条")
@@ -207,7 +207,7 @@ def daemon(ctx, interval):
     notify_interval = cfg.notify.get("interval", 3600)
     last_notify_time = 0.0
 
-    click.echo("🐧 LHM 守护进程模式")
+    click.echo("🐧 PyLOps 守护进程模式")
     click.echo(f"采集间隔: {cfg.interval_seconds}s")
     click.echo(f"通知间隔: {notify_interval}s")
     click.echo(f"指标: {cfg.enabled_metrics}")
@@ -297,7 +297,7 @@ def web(ctx, port, host, debug):
     from .web.app import create_app
     app = create_app(cfg, engine.db)
 
-    click.echo("🐧 LHM Web 仪表盘")
+    click.echo("🐧 PyLOps Web 仪表盘")
     click.echo(f"地址: http://{web_host}:{web_port}")
     click.echo(f"刷新间隔: {cfg.web.get('refresh_interval', 30)}s")
     click.echo()
@@ -352,7 +352,7 @@ def host_list(ctx):
 
 def main():
     """程序入口"""
-    cli(prog_name="lhm")
+    cli(prog_name="pylops")
 
 
 if __name__ == "__main__":

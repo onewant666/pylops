@@ -3,8 +3,8 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lhm"
-version = "0.1.0"
+name = "pylops"
+version = "0.2.0"
 description = "Linux 主机状态采集与定时自检工具 — 轻量级运维监控"
 readme = "README.md"
 license = {text = "MIT"}
@@ -46,16 +46,16 @@ dev = [
 ]
 
 [project.scripts]
-lhm = "lhm.cli:main"
+pylops = "pylops.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/onewant666/lhm"
-Repository = "https://github.com/onewant666/lhm"
-Issues = "https://github.com/onewant666/lhm/issues"
+Homepage = "https://github.com/onewant666/pylops"
+Repository = "https://github.com/onewant666/pylops"
+Issues = "https://github.com/onewant666/pylops/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["lhm*"]
+include = ["pylops*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

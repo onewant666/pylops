@@ -94,7 +94,10 @@ class Notifier:
         try:
             resp = requests.post(
                 webhook,
-                json={"msg_type": "text", "content": {"text": text}},
+                json={
+                    "msg_type": "text",
+                    "content": json.dumps({"text": text}),
+                },
                 timeout=10,
             )
             return resp.status_code == 200

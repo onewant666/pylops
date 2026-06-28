@@ -32,14 +32,30 @@ class SystemCollector(BaseCollector):
                 "started": datetime.fromtimestamp(u.started).isoformat(),
             })
 
-        # CPU 负载比（load_avg / cpu_count）
+        # CPU 负载比（仅 Linux/Unix 可用）
         cpu_count = psutil.cpu_count() or 1
-        load_avg = psutil.getloadavg()
+        try:
+            load_avg = psutil.getloadavg()
+            load_1m = round(load_avg[0], 2)
+            load_5m = round(load_avg[1], 2)
+            load_15m = round(load_avg[2], 2)
+            load_ratio = round(load_avg[0] / cpu_count, 2)
+        except (NotImplementedError, AttributeError):
+            load_1m = load_5m = load_15m = None
+            load_ratio = None
+            self._warnings.append(
+                "system.load_avg: 当前平台不可用（需要 Linux/Unix）"
+            )
 
         # 文件描述符（仅 Linux）
         try:
             fd_used = len(os.listdir("/proc/self/fd"))
             fd_max = os.sysconf("SC_OPEN_MAX")
+        except FileNotFoundError:
+            fd_used = fd_max = None
+            self._warnings.append(
+                "system.fd: /proc/self/fd 不可用（需要 Linux）"
+            )
         except (OSError, ValueError):
             fd_used = fd_max = None
 
@@ -49,11 +65,11 @@ class SystemCollector(BaseCollector):
             "uptime_seconds": int(uptime_seconds),
             "uptime": uptime_str,
             # 负载
-            "load_1m": round(load_avg[0], 2),
-            "load_5m": round(load_avg[1], 2),
-            "load_15m": round(load_avg[2], 2),
+            "load_1m": load_1m,
+            "load_5m": load_5m,
+            "load_15m": load_15m,
             "cpu_count": cpu_count,
-            "load_ratio": round(load_avg[0] / cpu_count, 2),  # 负载 / 核心数
+            "load_ratio": load_ratio,
             # 登录用户
             "users": users,
             "user_count": len(users),

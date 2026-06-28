@@ -15,6 +15,7 @@ class CheckResult:
     description: str
     severity: str          # info / warning / critical
     passed: bool
+    data_available: bool = True  # False 表示数据不可用（如平台不支持）
     detail: Dict[str, Any] = None
 
     def __post_init__(self):
@@ -83,7 +84,8 @@ class CheckEngine:
                 rule_name=rule.name,
                 description=rule.description,
                 severity=rule.severity,
-                passed=True,  # 无数据视为通过
+                passed=True,  # 无数据不告警，但标记为不可用
+                data_available=False,
                 detail={"error": f"指标 {rule.metric} 没有采集数据"},
             )
 
@@ -95,9 +97,10 @@ class CheckEngine:
                 rule_name=rule.name,
                 description=rule.description,
                 severity=rule.severity,
-                passed=True,  # 未知值视为通过
+                passed=True,  # 数据不可用不告警，但标记
+                data_available=False,
                 detail={
-                    "error": f"字段 {rule.field} 在指标 {rule.metric} 中不存在"
+                    "error": f"字段 {rule.field} 在指标 {rule.metric} 中不存在或不可用"
                 },
             )
 

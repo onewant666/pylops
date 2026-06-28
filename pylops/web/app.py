@@ -18,11 +18,11 @@ def create_app(config: Config, db: Database) -> Flask:
         template_folder=str(Path(__file__).parent / "templates"),
         static_folder=str(Path(__file__).parent / "static"),
     )
-    app.config["SECRET_KEY"] = "lhm-dashboard-secret"
+    app.config["SECRET_KEY"] = "pylops-dashboard-secret"
 
     # 把配置和数据库注入 app，方便路由使用
-    app.config["LHM_CONFIG"] = config
-    app.config["LHM_DB"] = db
+    app.config["PYLOPS_CONFIG"] = config
+    app.config["PYLOPS_DB"] = db
 
     # -------- 注册路由 --------
 

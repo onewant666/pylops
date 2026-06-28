@@ -130,7 +130,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <div class="footer">
-        LHM — Linux Host Monitor v0.1.0
+        PyLOps — Linux Host Monitor v0.1.0
     </div>
 </div>
 </body>

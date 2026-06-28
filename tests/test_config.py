@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from lhm.config import Config, load_config
+from pylops.config import Config, load_config
 
 
 class TestConfig:

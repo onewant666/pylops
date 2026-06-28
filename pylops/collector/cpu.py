@@ -36,8 +36,23 @@ class CPUCollector(BaseCollector):
         else:
             user_pct = system_pct = idle_pct = iowait_pct = 0
 
-        # 负载
-        load_avg = psutil.getloadavg()
+        # 负载（仅 Linux/Unix 可用）
+        try:
+            load_avg = psutil.getloadavg()
+            load_1m = round(load_avg[0], 2)
+            load_5m = round(load_avg[1], 2)
+            load_15m = round(load_avg[2], 2)
+        except (NotImplementedError, AttributeError):
+            load_1m = load_5m = load_15m = None
+            self._warnings.append(
+                "cpu.load_avg: 当前平台不可用（需要 Linux/Unix）"
+            )
+
+        # iowait 平台检测
+        if not hasattr(times, "iowait"):
+            self._warnings.append(
+                "cpu.iowait_pct: 当前平台不可用（需要 Linux）"
+            )
 
         return {
             # 使用率
@@ -55,7 +70,7 @@ class CPUCollector(BaseCollector):
             "idle_pct": idle_pct,
             "iowait_pct": iowait_pct,
             # 负载
-            "load_1m": round(load_avg[0], 2),
-            "load_5m": round(load_avg[1], 2),
-            "load_15m": round(load_avg[2], 2),
+            "load_1m": load_1m,
+            "load_5m": load_5m,
+            "load_15m": load_15m,
         }

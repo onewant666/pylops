@@ -47,8 +47,12 @@ class ConsoleReporter:
 
             for item in items:
                 status = "[green]✓[/green]" if item.success else "[red]✗[/red]"
+                if item.warnings:
+                    status += " [yellow]⚠[/yellow]"
                 summary = self._summarize_metric(item)
                 table.add_row(item.metric, status, summary)
+                for w in item.warnings:
+                    table.add_row("", "[dim]  ⚠[/dim]", f"[dim]{rich_escape(w)}[/dim]")
 
             self.console.print(table)
 
@@ -120,15 +124,19 @@ class ConsoleReporter:
 
         # 统计
         total = len(results)
-        passed = sum(1 for r in results if r.passed)
-        failed = total - passed
+        passed = sum(1 for r in results if r.passed and r.data_available)
+        failed = sum(1 for r in results if not r.passed)
+        unavailable = sum(1 for r in results if not r.data_available)
 
         summary_color = "green" if failed == 0 else "red"
-        self.console.print(
-            f"  共 [bold]{total}[/bold] 项检查  "
-            f"[green]✓ {passed} 通过[/green]  "
-            f"[{summary_color}]✗ {failed} 未通过[/{summary_color}]"
-        )
+        parts = [f"共 [bold]{total}[/bold] 项检查"]
+        if passed:
+            parts.append(f"[green]✓ {passed} 通过[/green]")
+        if failed:
+            parts.append(f"[{summary_color}]✗ {failed} 未通过[/{summary_color}]")
+        if unavailable:
+            parts.append(f"[dim]~ {unavailable} 无数据[/dim]")
+        self.console.print("  " + "  ".join(parts))
         self.console.print()
 
         table = Table(box=None, show_header=True, header_style="bold")
@@ -145,10 +153,12 @@ class ConsoleReporter:
                 "critical": "red",
             }.get(r.severity, "")
 
-            result_str = (
-                "[green]✓ 通过[/green]" if r.passed
-                else "[red]✗ 未通过[/red]"
-            )
+            if not r.data_available:
+                result_str = "[dim]~ 无数据[/dim]"
+            elif r.passed:
+                result_str = "[green]✓ 通过[/green]"
+            else:
+                result_str = "[red]✗ 未通过[/red]"
             detail_str = self._format_check_detail(r)
 
             table.add_row(

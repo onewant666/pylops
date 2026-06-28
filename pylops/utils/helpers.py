@@ -1,5 +1,6 @@
 """工具函数"""
 
+import platform
 import socket
 import time
 from datetime import datetime
@@ -62,3 +63,21 @@ def dict_deep_get(d: Dict[str, Any], key_path: str, default=None):
         if d is None:
             return default
     return d
+
+
+# ===================== 平台检测 =====================
+
+
+def get_platform() -> str:
+    """返回当前操作系统名称，如 'Linux' / 'Windows' / 'Darwin'"""
+    return platform.system()
+
+
+def is_linux() -> bool:
+    """是否为 Linux 系统"""
+    return get_platform() == "Linux"
+
+
+def is_windows() -> bool:
+    """是否为 Windows 系统"""
+    return get_platform() == "Windows"

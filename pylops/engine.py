@@ -75,6 +75,8 @@ class MonitorEngine:
 
             if result.success:
                 logger.debug(f"[{host_cfg.name}] {metric} 采集成功")
+                for w in result.warnings:
+                    logger.warning(f"[{host_cfg.name}] {metric}: {w}")
             else:
                 logger.warning(
                     f"[{host_cfg.name}] {metric} 采集失败: {result.error}"
