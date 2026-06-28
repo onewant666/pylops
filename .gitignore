@@ -37,3 +37,9 @@ htmlcov/
 # Env
 .env
 .env.local
+
+# Package artifact
+lhm-install.tar.gz
+
+# Claude
+.claude/
